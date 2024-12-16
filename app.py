@@ -2,7 +2,7 @@ from crewai import Agent, Task, Crew
 import warnings
 import os
 from dotenv import load_dotenv
-import PyPDF2  # Biblioteca para manipular PDFs
+from crewai_tools import PDFSearchTool
 
 # Ignorar warnings
 warnings.filterwarnings('ignore')
@@ -12,21 +12,34 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 os.environ["OPENAI_MODEL_NAME"] = 'gpt-4o-mini'
 
-# Ler o PDF
-pdf_path = "Processo_Montagem_Carro.pdf"
-with open(pdf_path, "rb") as pdf_file:
-    pdf_reader = PyPDF2.PdfReader(pdf_file)
-    pdf_text = ""
-    for page in pdf_reader.pages:
-        pdf_text += page.extract_text()
+tool = PDFSearchTool(
+    pdf="C:/Oppem/crewAI/CrewAI-projects/Process_Montagem_Carro.pdf",
+    config=dict(
+        llm=dict(
+            provider="openai",
+            config=dict(
+                model="gpt-4o-mini",
+                temperature=0.5,
+                top_p=1,
+            ),
+        ),
+        embedder=dict(
+            provider="openai",
+            config=dict(
+                model="gpt-4o-mini",
+            ),
+        ),
+    )
+)
 
 # Configuração do agente
 search_pdf_agent = Agent(
     role="PDF search",
-    goal="Encontrar a resposta coerente à pergunta do usuário com base no conteúdo do PDF",
+    goal="Encontrar a resposta coerente à pergunta do usuário {question} com base no conteúdo do PDF",
     backstory="""Você está conectado a um arquivo PDF. Seu trabalho é buscar informações diretamente
     no texto do PDF para responder à pergunta do usuário. Caso não encontre uma resposta clara, você
     deve explicar o tema principal do PDF com base no texto extraído.""",
+    tools=[tool],
     allow_delegation=False,
     verbose=True
 )
@@ -59,8 +72,6 @@ crew = Crew(
 while True:
     # Entrada do usuário
     question = input("Qual a sua pergunta (digite 'quit' para sair): ").strip()
-    print("Texto extraído do PDF (primeiros 500 caracteres):")
-    print(pdf_text[:500])  # Mostra os primeiros 500 caracteres do texto
 
 
     # Verificar se o usuário deseja sair
@@ -68,9 +79,10 @@ while True:
         print("Encerrando o sistema. Até mais!")
         break
 
-    # Executar o fluxo
-    result = crew.kickoff(inputs={"question": question, "pdf_content": pdf_text})
-
-    # Exibir o resultado no terminal
-    print("\nResposta do agente:")
-    print(result.raw)
+    try:
+        result = crew.kickoff(inputs={"question": question})
+        print("\nResposta do agente:")
+        print(result.raw)
+    except Exception as e:
+        print(f"Ocorreu um erro durante a execução: {e}")
+        print("Certifique-se de que o PDF está acessível e o formato da entrada está correto.")
