@@ -12,7 +12,7 @@ os.environ["OPENAI_MODEL_NAME"] = 'gpt-4o-mini'
 
 # Initialize the tool with a specific PDF path for exclusive search within that document
 search_tool = PDFSearchTool(
-    pdf=r"C:\Oppem\crewAI\CrewAI-projects\Processo_Montagem_Carro.pdf",
+    pdf=r"C:\Oppem\crewAI\CrewAI-projects\Processo_criacao_RDO.pdf",
     config=dict(
         llm=dict(
             provider="openai",
@@ -34,7 +34,7 @@ search_tool = PDFSearchTool(
 search_pdf_agent = Agent(
     role="PDF search specialist",
     goal = "Seja preciso de acordo com o pdf, para responder a {question} do usuário",
-    backstory="""Você é um especialista em processos de montagem de carros e tem acesso
+    backstory="""Você é um especialista em processos de criação de RDOs na plataforma opus e tem acesso
           direto a um arquivo PDF detalhado sobre o tema.
           Sua função é consultar esse documento para fornecer informações precisas
           para responder a {question} do usuário.
@@ -47,7 +47,7 @@ search_pdf_agent = Agent(
 search_pdf_task = Task(
     description="""
         Realize uma consulta no arquivo PDF vinculado a você, que contém informações 
-        detalhadas sobre o processo de montagem de carros. 
+        detalhadas sobre o processo de criação de RDOs na plataforma Opus. 
         A tarefa é buscar e fornecer uma resposta clara com base no conteúdo 
         do documento para responder a pergunta do usuário {question}. Certifique-se de responder apenas o que você encontrar no documento.
     """,
@@ -55,7 +55,7 @@ search_pdf_task = Task(
         Uma resposta detalhada e informativa que aborda a questão apresentada, 
         extraindo as informações diretamente do PDF. 
         A resposta deve ser clara, técnica quando necessário, e fácil de entender, 
-        com foco em explicar o processo de montagem de carros.
+        com foco em explicar o processo de criação de RDOs.
         A resposta Final deve ser em forma de parágrafo e não em tópicos.
     """,
     tools=[search_tool],  
@@ -71,7 +71,7 @@ crew = Crew(
 
 
 
-print("Chat iniciado. Pergunte sobre o processo de montagem de carros. Digite 'quit' para sair.\n")
+print("Chat iniciado. Pergunte sobre o processo de criação de RDOs. Digite 'quit' para sair.\n")
 
 while True:
     question = input("User: ").strip() 
