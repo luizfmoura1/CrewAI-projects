@@ -4,21 +4,20 @@ import os
 from dotenv import load_dotenv
 from crewai_tools import PDFSearchTool
 
-# Ignorar warnings
 warnings.filterwarnings('ignore')
 
-# Carregar variáveis de ambiente
 load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 os.environ["OPENAI_MODEL_NAME"] = 'gpt-4o-mini'
 
-tool = PDFSearchTool(
-    pdf="C:/Oppem/crewAI/CrewAI-projects/Process_Montagem_Carro.pdf",
+# Initialize the tool with a specific PDF path for exclusive search within that document
+search_tool = PDFSearchTool(
+    pdf=r"C:\Oppem\crewAI\CrewAI-projects\Processo_Montagem_Carro.pdf",
     config=dict(
         llm=dict(
             provider="openai",
             config=dict(
-                model="gpt-4o-mini",
+                model="gpt-4",  # Modelo válido
                 temperature=0.5,
                 top_p=1,
             ),
@@ -26,63 +25,63 @@ tool = PDFSearchTool(
         embedder=dict(
             provider="openai",
             config=dict(
-                model="gpt-4o-mini",
+                model="text-embedding-ada-002",  # Modelo de embedding
             ),
         ),
     )
 )
 
-# Configuração do agente
 search_pdf_agent = Agent(
-    role="PDF search",
-    goal="Encontrar a resposta coerente à pergunta do usuário {question} com base no conteúdo do PDF",
-    backstory="""Você está conectado a um arquivo PDF. Seu trabalho é buscar informações diretamente
-    no texto do PDF para responder à pergunta do usuário. Caso não encontre uma resposta clara, você
-    deve explicar o tema principal do PDF com base no texto extraído.""",
-    tools=[tool],
+    role="PDF search specialist",
+    goal = "Seja preciso de acordo com o pdf, para responder a {question} do usuário",
+    backstory="""Você é um especialista em processos de montagem de carros e tem acesso
+          direto a um arquivo PDF detalhado sobre o tema.
+          Sua função é consultar esse documento para fornecer informações precisas
+          para responder a {question} do usuário.
+          Você não deve utilizar seus conhecimentos gerais, deve responder apenas se encontrar a resposta dentro do documento.
+          Forneça uma resposta precisa e específica para a pergunta do usuário, não traga a tona outros temas e processos que não tenham relação com a {question}""",
     allow_delegation=False,
     verbose=True
 )
 
-
-# Configuração da tarefa
-search_task = Task(
-    description=(
-        """Receba a pergunta do usuário: {question}
-        Busque informações no texto do PDF que respondam diretamente ou algo relacionado à pergunta.
-        Se encontrar, forneça a resposta exata. Caso contrário, descreva o tema principal do PDF."""
-),
-
-    expected_output=(
-        "Uma resposta clara e coerente para a pergunta do usuário: {question}"
-        "Se a resposta não for encontrada, responda com algo que faça sentido relacionar com a pergunta do usuário"
-        "Se a pergunta for totalmente disconexa do tema do arquivo, você deve responde que não consegue responder perguntas que não sejam do tema do banco "
-    ),
-    agent=search_pdf_agent
+search_pdf_task = Task(
+    description="""
+        Realize uma consulta no arquivo PDF vinculado a você, que contém informações 
+        detalhadas sobre o processo de montagem de carros. 
+        A tarefa é buscar e fornecer uma resposta clara com base no conteúdo 
+        do documento para responder a pergunta do usuário {question}. Certifique-se de responder apenas o que você encontrar no documento.
+    """,
+    expected_output="""
+        Uma resposta detalhada e informativa que aborda a questão apresentada, 
+        extraindo as informações diretamente do PDF. 
+        A resposta deve ser clara, técnica quando necessário, e fácil de entender, 
+        com foco em explicar o processo de montagem de carros.
+        A resposta Final deve ser em forma de parágrafo e não em tópicos.
+    """,
+    tools=[search_tool],  
+    agent=search_pdf_agent  
 )
 
-# Configuração da equipe
 crew = Crew(
     agents=[search_pdf_agent],
-    tasks=[search_task],
-    verbose=True
+    tasks=[search_pdf_task],
+    verbose=True,
+    memory=True
 )
 
-# Loop para conversação
+
+
+print("Chat iniciado. Pergunte sobre o processo de montagem de carros. Digite 'quit' para sair.\n")
+
 while True:
-    # Entrada do usuário
-    question = input("Qual a sua pergunta (digite 'quit' para sair): ").strip()
-
-
-    # Verificar se o usuário deseja sair
-    if question.lower() == "quit":
-        print("Encerrando o sistema. Até mais!")
+    question = input("User: ").strip() 
+    if question.lower() == "quit":  #
+        print("Encerrando o chatbot. Até logo!")
         break
 
     try:
-        result = crew.kickoff(inputs={"question": question})
-        print("\nResposta do agente:")
-        print(result.raw)
+        # Passar a pergunta para o Crew
+        result = crew.kickoff(inputs={"query": question, "question": question})
+        print(f"Bot: {result}\n")
     except Exception as e:
-        print(f"Ocorreu um erro durante a execução: {e}")
-        print("Certifique-se de que o PDF está acessível e o formato da entrada está correto.")
+        print(f"Erro: {str(e)}. Tente novamente.\n")
