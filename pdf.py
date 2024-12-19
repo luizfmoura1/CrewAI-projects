@@ -85,3 +85,4 @@ while True:
         print(f"Bot: {result}\n")
     except Exception as e:
         print(f"Erro: {str(e)}. Tente novamente.\n")
+
