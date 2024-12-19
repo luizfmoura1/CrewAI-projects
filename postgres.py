@@ -3,12 +3,23 @@ import warnings
 import os
 from dotenv import load_dotenv
 from crewai_tools import PGSearchTool
+from crewai.tools import BaseTool
 
 warnings.filterwarnings('ignore')
 
 load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 os.environ["OPENAI_MODEL_NAME"] = 'gpt-4o-mini'
+
+class QueryTool(BaseTool):
+    name: str = "Query SQL Tool"
+    description: str = "Identifica a pergunta {question} do usuário e cria uma query SQL que será feita no banco postgres vinculado."
+
+    def _run(self, argument: str) -> str:
+        # Your tool's logic here
+        return "Tool's result"
+
+run_query_tool = QueryTool()
 
 
 
@@ -95,7 +106,7 @@ sql_developer_agent = Agent(
 
 sql_developer_task = Task(
     description=
-    """Responda à pergunta do usuário ({question}) com base nos dados disponíveis na tabela 'daily_report', utilizando o contexto da conversa anterior ({chat_history}), se aplicável. Siga estas diretrizes:
+    """Responda à pergunta do usuário ({question}) com base nos dados disponíveis na tabela 'daily_report', Siga estas diretrizes:
     Caso a pergunta não mencione explicitamente a tabela, infira com base nas colunas mencionadas.
 
     1. **Consultas ao banco de dados**:
@@ -129,7 +140,7 @@ sql_developer_task = Task(
     A consulta SQL deve incluir apenas a tabela daily_report, sem necessidade de JOIN com outras tabelas.
     Responda à pergunta de forma apropriada, seguindo as diretrizes acima.""",
     agent=sql_developer_agent,
-    tools=[connection_pg_tool],
+    tools=[connection_pg_tool, run_query_tool],
 )
 
 
