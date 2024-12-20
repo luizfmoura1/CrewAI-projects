@@ -1,9 +1,9 @@
 from crewai import Agent, Task, Crew
 import warnings
 import os
+import psycopg2
 from dotenv import load_dotenv
 from crewai_tools import PGSearchTool
-from crewai.tools import BaseTool
 
 warnings.filterwarnings('ignore')
 
@@ -11,16 +11,19 @@ load_dotenv()
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 os.environ["OPENAI_MODEL_NAME"] = 'gpt-4o-mini'
 
-class QueryTool(BaseTool):
-    name: str = "Query SQL Tool"
-    description: str = "Identifica a pergunta {question} do usuário e cria uma query SQL que será feita no banco postgres vinculado."
 
-    def _run(self, argument: str) -> str:
-        # Your tool's logic here
-        return "Tool's result"
-
-run_query_tool = QueryTool()
-
+try:
+    connection = psycopg2.connect(
+        dbname="gerdau",
+        user="gerdau",
+        password="gerdau",
+        host="localhost",
+        port="6432"
+    )
+    print("Conexão bem-sucedida!")
+    connection.close()
+except Exception as e:
+    print(f"Erro ao conectar ao banco de dados: {e}")
 
 
 connection_pg_tool = PGSearchTool(
@@ -81,7 +84,6 @@ sql_developer_agent = Agent(
     - Utilize ferramentas para consultas SQL somente quando necessário.
     - Ao usar ferramentas, siga rigorosamente este formato:
         - Thought: Explique seu raciocínio.
-        - Action: Nome da ferramenta (run_query).
         - Action Input: Dados no formato JSON.
 
     3. Perguntas fora do escopo do banco:
@@ -101,6 +103,7 @@ sql_developer_agent = Agent(
     """,
     allow_delegation=False,
     verbose=True,
+    max_iter=2
 )
 
 
@@ -140,7 +143,7 @@ sql_developer_task = Task(
     A consulta SQL deve incluir apenas a tabela daily_report, sem necessidade de JOIN com outras tabelas.
     Responda à pergunta de forma apropriada, seguindo as diretrizes acima.""",
     agent=sql_developer_agent,
-    tools=[connection_pg_tool, run_query_tool],
+    tools=[connection_pg_tool],
 )
 
 
