@@ -15,10 +15,10 @@ os.environ["OPENAI_MODEL_NAME"] = 'gpt-4o-mini'
 try:
     connection = psycopg2.connect(
         dbname="gerdau",
-        user="gerdau",
-        password="gerdau",
-        host="localhost",
-        port="6432"
+        user='luiz',
+        password='CgvQTiyXXEN7xSnsMHBkT5NW2MaxtC',
+        host='localhost',
+        port= 5432
     )
     print("Conexão bem-sucedida!")
     connection.close()
